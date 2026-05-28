@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.env
+banco.db
+limpar_banco.py
+*.ipynb
+myenv/
