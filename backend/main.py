@@ -51,9 +51,8 @@ async def alimentar_banco():
             logger.error(f"Erro ao processar {pdf}: {e}", exc_info=True)
             # não para o processo — continua nas próximas
             continue
-        
-        finally:
-            await engine.dispose()
+
+    await engine.dispose()
 
 
 if __name__ == "__main__":

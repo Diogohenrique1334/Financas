@@ -51,7 +51,7 @@ def extrair_periodo_transacoes(text: str) -> int:
             return int(year_str)
 
         # 3️⃣ fallback
-        current_year = datetime.now().year
+        current_year = datetime.datetime.now().year
         logger.warning(
             f"Não foi possível detectar o ano da fatura. Usando ano atual como fallback: {current_year}"
         )
@@ -114,9 +114,11 @@ def parse_response(response: str) -> List[Transaction]:
         json_match = re.search(r'```json\s*(\{.*?\})\s*```', response, re.DOTALL)
         if not json_match:
             json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if not json_match: return []
-        
-        json_str = json_match.group(1).strip()
+            if not json_match:
+                return []
+            json_str = json_match.group(0).strip()
+        else:
+            json_str = json_match.group(1).strip()
         data = json.loads(json_str)
         transactions_data = data.get('transactions', [])
         
@@ -124,7 +126,9 @@ def parse_response(response: str) -> List[Transaction]:
         for t in transactions_data:
             try:
                 if isinstance(t.get('amount'), str):
-                    amount_str = re.sub(r'[^\d,.]', '', t['amount']).replace('.', '', t['amount'].count('.') - 1).replace(',', '.')
+                    amount_str = re.sub(r'[^\d,.]', '', t['amount'])
+                    amount_str = re.sub(r'\.(?=\d{3})', '', amount_str)
+                    amount_str = amount_str.replace(',', '.')
                     t['amount'] = float(amount_str)
                 valid_transactions.append(Transaction(**t))
             except Exception as e:

@@ -11,8 +11,6 @@ from graficos import barras_laterais_sum_qtd, grafico_rosca,mapa_sp, grefico_cal
 def carregar_dados():
     return asyncio.run(get_gastos_bradesco())
 
-df = carregar_dados()
-
 @st.cache_data
 def preparar_df():
     df = carregar_dados()
@@ -63,7 +61,7 @@ def serei_dia_semana(df,col_data,valores,colunas,agg):
                         columns = df[col_data].dt.dayofweek,
                         aggfunc = agg)
     
-    eixo = [ x for x in serie_gastos.columns.map({0:'Domingo',1:'Segunda',2:'Terça',3:'Quarta',4:'Quinta',5:'Sexta',6:'Sábado',7:'Domingo'})]
+    eixo = [ x for x in serie_gastos.columns.map({0:'Segunda',1:'Terça',2:'Quarta',3:'Quinta',4:'Sexta',5:'Sábado',6:'Domingo'})]
 
     categorias = [ x for x in serie_gastos.index]
 
@@ -297,7 +295,7 @@ with col3:
 with col4:
     val = avg_line.mean() or 0
     delta = (
-        get_delta(val, avg_line[len(avg_line)-1])
+        get_delta(avg_line.iloc[-1], val)
         if previsto_kpi is not None
         else None
     )

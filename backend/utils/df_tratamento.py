@@ -50,7 +50,7 @@ def pipe_parcelas(df_filtrado):
     df_filtrado['total_parcelas'] = None
 
     # Máscara para compras parceladas
-    mask = df_filtrado.parcelas.map(lambda x: len(x)) == 5
+    mask = df_filtrado.parcelas.str.len() == 5
 
     # Cria chave única
     df_filtrado['Chave'] = (

@@ -1,33 +1,34 @@
 import requests
 import unicodedata
+import functools
+import logging
 from rapidfuzz import process, fuzz
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+
+def limpar_texto(texto):
+    if pd.isna(texto):
+        return ""
+    texto = str(texto).upper().strip()
+    texto = unicodedata.normalize("NFKD", texto)
+    texto = texto.encode("ASCII", "ignore").decode("utf-8")
+    return " ".join(texto.split())
+
+@functools.lru_cache(maxsize=1)
+def _buscar_municipios():
+    url = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.RequestException as e:
+        logger.error(f"Falha ao buscar municípios do IBGE: {e}")
+        return []
+
 def normalizar_cidades(lista_cidades, score_minimo=80):
 
-    # =========================
-    # LIMPEZA
-    # =========================
-    def limpar_texto(texto):
-
-        if pd.isna(texto):
-            return ""
-
-        texto = str(texto).upper().strip()
-
-        texto = unicodedata.normalize("NFKD", texto)
-        texto = texto.encode("ASCII", "ignore").decode("utf-8")
-
-        texto = " ".join(texto.split())
-
-        return texto
-
-    # =========================
-    # IBGE
-    # =========================
-    url = "https://servicodados.ibge.gov.br/api/v1/localidades/municipios"
-
-    municipios = requests.get(url).json()
+    municipios = _buscar_municipios()
 
     # cria estrutura:
     # chave limpa -> nome oficial
