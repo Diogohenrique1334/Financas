@@ -1,7 +1,10 @@
 # Projeto Desenvolvido na Data Science Academy
 """Configurações da aplicação via Pydantic BaseSettings."""
 
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+_ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 
 class Settings(BaseSettings):
@@ -14,7 +17,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:8501"
 
     class Config:
-        env_file = "../.env"
+        env_file = str(_ENV_FILE)
         extra = "allow"
 
 

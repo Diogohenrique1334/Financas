@@ -1,9 +1,24 @@
 import streamlit as st
 import pandas as pd
 import asyncio
+import sys
+import importlib.util
+from pathlib import Path
+
 from repository.gastos_repository import get_gastos_bradesco
 from utils.df_tratamento import ajustes_data, pepi_gastos, pipe_parcelas
-from graficos import barras_laterais_sum_qtd, grafico_rosca,mapa_sp, grefico_calendario,barras_drilldown,barras_empilhadas_laterais,grafico_cachoeira, mapa_palavras,barras_simples
+from graficos import barras_laterais_sum_qtd, grafico_rosca, grefico_calendario, barras_drilldown, barras_empilhadas_laterais, grafico_cachoeira, mapa_palavras, barras_simples
+
+# Importa mapas do Baltazar dinamicamente para evitar conflito de nomes
+baltazar_path = Path(r"c:\Users\User\OneDrive - Claro SA\Área de Trabalho\notebook Dell\Diogo Coisas pessoais\Projetos\baltazar\graficos\graficos_streamlit\mapas_dinamicos.py")
+spec = importlib.util.spec_from_file_location("mapas_dinamicos", baltazar_path)
+mapas_dinamicos = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mapas_dinamicos)
+
+mapa_estado = mapas_dinamicos.mapa_estado
+mapa_brasil = mapas_dinamicos.mapa_brasil
+obter_mapping_municipios_estado = mapas_dinamicos.obter_mapping_municipios_estado
+obter_estados_unicos = mapas_dinamicos.obter_estados_unicos
 
 
 # entrada dos dados
@@ -23,6 +38,21 @@ def preparar_df():
     return df_filtrado
 
 df_limpo = preparar_df()
+
+@st.cache_data
+def extrair_estados_com_gastos(df):
+    """Extrai estados únicos que têm gastos registrados no DataFrame."""
+    mapa = obter_mapping_municipios_estado()
+    cidades = df['cidade'].dropna().unique()
+    estados = set()
+
+    for cidade in cidades:
+        if cidade in mapa:
+            uf = mapa[cidade]['uf']
+            estado_nome = mapa[cidade]['estado']
+            estados.add((uf, estado_nome))
+
+    return sorted(list(estados), key=lambda x: x[1])
 
 def df_para_lista_dict(df_filtrado,categoria = 'categoria', somatorio = 'amount', controle = "name"):
 
@@ -347,9 +377,49 @@ with st.container(border=True, height = 500):
 
     with st.container(border=True, height=470):
 
-        st.subheader("Gastos por cidade de são paulo", divider=True)
+        col_titulo, col_select = st.columns([3, 1])
 
-        mapa_sp(df_para_lista_dict(df_filtrado,'cidade'),tamanho="400px")
+        with col_titulo:
+            st.subheader("Gastos por cidade", divider=True)
+
+        with col_select:
+            # Extrai estados com dados e cria opções do selectbox
+            mapa_municipios = obter_mapping_municipios_estado()
+            estados_com_gastos = extrair_estados_com_gastos(df_filtrado)
+
+            opcoes = ["Brasil"] + [f"{uf} - {nome}" for uf, nome in estados_com_gastos]
+            opcao_selecionada = st.selectbox(
+                "Estado",
+                opcoes,
+                label_visibility="collapsed",
+                key="select_estado_mapa"
+            )
+
+        # Renderiza mapa dinâmico baseado na seleção
+        if opcao_selecionada == "Brasil":
+            # Agregação por estado
+            dados_estados_gasto = []
+            for uf, nome_estado in estados_com_gastos:
+                cidades_uf = [c for c, info in mapa_municipios.items() if info['uf'] == uf]
+                total = df_filtrado[df_filtrado['cidade'].isin(cidades_uf)]['amount'].sum()
+                if total > 0:
+                    dados_estados_gasto.append({"name": nome_estado, "value": int(total)})
+
+            if dados_estados_gasto:
+                mapa_brasil(dados_estados_gasto, tamanho="400px")
+            else:
+                st.info("Nenhum dado disponível para o Brasil com os filtros aplicados.")
+        else:
+            # Renderiza estado específico
+            uf = opcao_selecionada.split(" - ")[0]
+            cidades_do_estado = [c for c, info in mapa_municipios.items() if info['uf'] == uf]
+            df_estado = df_filtrado[df_filtrado['cidade'].isin(cidades_do_estado)]
+
+            if len(df_estado) > 0:
+                dados_mapa = df_para_lista_dict(df_estado, 'cidade')
+                mapa_estado(dados_mapa, uf=uf, tamanho="400px")
+            else:
+                st.info(f"Nenhum dado disponível para {opcao_selecionada} com os filtros aplicados.")
 
     with st.container(border=True, height=430):
 

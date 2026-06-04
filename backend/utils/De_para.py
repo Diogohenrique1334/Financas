@@ -26,6 +26,25 @@ def _buscar_municipios():
         logger.error(f"Falha ao buscar municípios do IBGE: {e}")
         return []
 
+@functools.lru_cache(maxsize=1)
+def _buscar_municipios_com_estado():
+    municipios = _buscar_municipios()
+    mapping = {}
+    for m in municipios:
+        nome_oficial = m["nome"]
+        try:
+            # Estrutura correta: mesorregiao.UF (não estado)
+            uf_dict = m.get("microrregiao", {}).get("mesorregiao", {}).get("UF", {})
+            uf = uf_dict.get("sigla")
+            estado_nome = uf_dict.get("nome")
+
+            if uf and estado_nome:
+                mapping[nome_oficial] = {"uf": uf, "estado": estado_nome}
+        except (KeyError, AttributeError):
+            continue
+
+    return mapping
+
 def normalizar_cidades(lista_cidades, score_minimo=80):
 
     municipios = _buscar_municipios()
