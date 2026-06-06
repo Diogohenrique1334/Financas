@@ -5,3 +5,9 @@ banco.db
 limpar_banco.py
 *.ipynb
 myenv/
+
+# Faturas e dados extraídos — documentos financeiros sensíveis, nunca versionar
+*.pdf
+*.PDF
+Faturas_santander/
+testes/fatura_*.csv
