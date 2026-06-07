@@ -123,6 +123,43 @@ data/Faturas_bradesco/*.pdf
 
 ---
 
+## ✅ Qualidade da extração
+
+Como a extração é feita por um LLM (não-determinístico e pago), a qualidade é
+medida **sem re-chamar o modelo**, comparando o resultado com sinais obtidos
+direto do texto da fatura. O harness vive em [`backend/avaliacao/`](backend/avaliacao)
+e é coberto por testes determinísticos (`backend/testes/test_avaliador_extracao.py`).
+
+Duas métricas:
+
+- **Cobertura de linhas (recall):** das linhas que *parecem* transação (heurística
+  de regex `data + valor`), quantas viraram transação estruturada.
+- **Reconciliação de valor:** a soma das transações extraídas bate com o total
+  da fatura (verificado manualmente)?
+
+Avaliando uma fatura real de teste (Santander):
+
+| Métrica | Resultado |
+|---|---|
+| Cobertura de linhas | **98,4%** (61 de 62 linhas) |
+| Reconciliação de valor | **99,5%** (R$ 2.763,71 extraídos vs. R$ 2.777,08 da fatura) |
+
+Reproduza com:
+
+```bash
+cd backend
+python -m avaliacao.avaliar_faturas \
+  --pdf ../testes/fatura_sem_senha.pdf \
+  --csv ../testes/fatura_sem_senha.csv \
+  --total 2777.08
+```
+
+> É uma amostra pequena (faturas de teste), reportada como ordem de grandeza —
+> não como garantia estatística. O objetivo é tornar o pipeline **auditável**: a
+> mesma função pode rodar sobre qualquer par (PDF, transações extraídas).
+
+---
+
 ## 📊 O que o dashboard mostra
 
 - **KPIs**: total gasto, nº de utilizações, dias sem usar o cartão, ticket médio
@@ -150,6 +187,7 @@ backend/
   models/              # ORM (tabela faturas)
   schemas/             # schemas Pydantic da ingestão
   agents/              # wrapper do LLM (LangChain)
+  avaliacao/           # métricas de qualidade da extração (cobertura, reconciliação)
   utils/               # df_tratamento, De_para (IBGE), leitura de faturas
   main.py              # entrada da ingestão
   config.py            # settings (pydantic-settings)
