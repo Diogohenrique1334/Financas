@@ -1,16 +1,7 @@
-# UI
 streamlit==1.50.0
 streamlit-echarts==0.4.0
-
-# Cliente HTTP p/ o backend
 httpx==0.28.1
-
-# Processamento de dados (view-model dos gráficos)
 pandas==2.3.0
 numpy==2.0.2
-
-# Configuração
 pydantic-settings==2.11.0
-
-# Mapas dinâmicos (módulo Baltazar busca GeoJSON/IBGE)
 requests==2.32.4

@@ -1,14 +1,3 @@
-"""Dashboard financeiro (Streamlit) — camada de apresentação.
-
-Orquestra filtros, KPIs e os containers de gráficos. Os dados vêm da API
-(backend FastAPI) via `api.client.get_gastos`; as transformações para os
-gráficos ficam em `dados.preparo_graficos`; os componentes em `componentes.graficos`.
-
-Executar a partir da raiz do projeto:
-
-    streamlit run frontend/app.py
-"""
-
 import streamlit as st
 
 from api.client import get_gastos

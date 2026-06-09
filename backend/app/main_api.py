@@ -8,7 +8,7 @@ Executar a partir do diretório ``backend/``:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import gastos
+from app.routers import agente, gastos
 from config import settings
 
 app = FastAPI(title=settings.APP_NAME)
@@ -22,6 +22,7 @@ app.add_middleware(
 )
 
 app.include_router(gastos.router)
+app.include_router(agente.router)
 
 
 @app.get("/health", tags=["infra"])

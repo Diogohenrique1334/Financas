@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⭐ Próximo grande incremento — Agente de Gastos
+
+O Diogo quer construir um **agente conversacional (tool calling) que responde perguntas
+sobre os gastos em linguagem natural**, sobre os dados reais. A especificação completa
+(arquitetura, catálogo de ferramentas, avaliação, roadmap ordenado) está em
+**[`PROXIMOS_PASSOS_AGENTE_GASTOS.md`](PROXIMOS_PASSOS_AGENTE_GASTOS.md)**. Leia-o antes de
+mexer nessa frente. Pontos inegociáveis: **não é RAG** (dado estruturado → tool calling),
+as ferramentas **agregam em pandas sobre `listar_gastos_tratados()`** (consistência com o
+dashboard, zero SQL injection), e a etapa de **avaliação com golden set** não é opcional.
+
 ## Running the project
 
 The project is split into **two independent processes** plus an offline ingestion job. The backend and the ingestion job run **from within `backend/`** (their modules use unqualified imports, e.g. `from repository.gastos_repository import …`); the frontend runs **from the project root**.

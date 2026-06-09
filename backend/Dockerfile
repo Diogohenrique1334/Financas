@@ -16,5 +16,7 @@ COPY . .
 
 EXPOSE 8001
 
-# Imports não-qualificados assumem o diretório do backend como raiz (cwd = /app)
-CMD ["uvicorn", "app.main_api:app", "--host", "0.0.0.0", "--port", "8001"]
+# Imports não-qualificados assumem o diretório do backend como raiz (cwd = /app).
+# Forma shell para expandir $PORT (injetado pela nuvem, ex.: Render); local sem
+# $PORT cai no default 8001 — idêntico ao docker-compose.
+CMD uvicorn app.main_api:app --host 0.0.0.0 --port ${PORT:-8001}

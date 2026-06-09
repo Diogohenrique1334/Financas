@@ -1,0 +1,50 @@
+# Blueprint de deploy no Render — dois microsserviços em Docker.
+#
+# Espelha o docker-compose: backend (FastAPI) + frontend (Streamlit), ligados
+# por HTTP na rede privada do Render. O banco continua sendo o Neon (nuvem),
+# então NÃO há serviço de banco aqui — só a DATABASE_URL como secret.
+#
+# Como usar:
+#   1. Suba o repositório no GitHub.
+#   2. No Render: New → Blueprint → aponte para este repo.
+#   3. Preencha as secrets marcadas com `sync: false` (DATABASE_URL, OPENAI_API_KEY).
+#   4. Deploy. O frontend recebe o endereço interno do backend automaticamente.
+#
+# Segurança: o agente é protegido por teto diário (LIMITE_DIARIO_AGENTE). Para
+# esconder a API totalmente, troque o backend para `type: pserv` (private service,
+# requer plano pago) — aí só o frontend o acessa.
+
+services:
+  - type: web
+    name: financas-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false            # cole no painel (secret)
+      - key: OPENAI_API_KEY
+        sync: false            # cole no painel (secret)
+      - key: ALLOWED_ORIGINS
+        value: "*"             # frontend chama via servidor (httpx), CORS é irrelevante
+      - key: LIMITE_DIARIO_AGENTE
+        value: "200"
+
+  - type: web
+    name: financas-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      # Endereço interno do backend (host:port) injetado pelo Render.
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: financas-backend
+          property: hostport
+      # Mapas do Baltazar vendorizados na imagem (sem volume na nuvem).
+      - key: BALTAZAR_MAPAS_PATH
+        value: /app/vendor/mapas_dinamicos.py

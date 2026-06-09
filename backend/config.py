@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     BACKEND_URL: str = "http://backend:8001"
     ALLOWED_ORIGINS: str = "http://localhost:8501"
+    # Teto diário de chamadas ao agente (protege a chave OpenAI se exposto).
+    LIMITE_DIARIO_AGENTE: int = 200
 
     class Config:
         env_file = str(_ENV_FILE)

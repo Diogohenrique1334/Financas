@@ -1,27 +1,17 @@
-# API / servidor
 fastapi==0.128.8
 uvicorn[standard]==0.39.0
-
-# Banco de dados
 SQLAlchemy==2.0.41
 asyncpg==0.31.0
-
-# Configuração / validação
 pydantic==2.11.5
 pydantic-settings==2.11.0
 python-dotenv==1.1.0
-
-# Processamento de dados
 pandas==2.3.0
 numpy==2.0.2
-
-# Normalização de cidades (IBGE) e ingestão de PDFs
 requests==2.32.4
 RapidFuzz==3.13.0
 PyPDF2==3.0.1
-
-# Extração via LLM
 langchain==0.3.25
 langchain-openai==0.3.35
 openai==2.32.0
 google-api-core==2.25.1
+pytest==8.4.2

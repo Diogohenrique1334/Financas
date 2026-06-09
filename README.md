@@ -23,6 +23,72 @@ A aplicação é dividida em **dois serviços independentes** que compartilham o
 
 ---
 
+## 🤖 Agente de Gastos — pergunte em linguagem natural
+
+Além do dashboard, o projeto expõe um **agente conversacional** que responde
+perguntas sobre os gastos em português — *"quanto gastei com transporte em março?"*,
+*"estou gastando mais que no mês passado?"*, *"quanto ainda devo de parcelas?"* — com
+base nos **dados reais** do banco.
+
+```
+POST /agente/perguntar  {"pergunta": "quanto gastei com transporte em março de 2025?"}
+  → o LLM escolhe a ferramenta e os parâmetros:  gasto_por_categoria(mes=3, ano=2025, categoria="Transporte")
+  → a consulta roda em pandas determinístico sobre os MESMOS dados tratados do dashboard
+  → o número volta ao LLM, que redige a resposta em PT-BR citando o valor e o filtro
+  → RespostaOut { resposta, ferramentas_usadas, dados_brutos, tokens, latencia_ms }
+```
+
+### Por que **tool calling** e não text-to-SQL nem RAG?
+
+- **Não é RAG.** Os dados são estruturados e as perguntas exigem **agregação exata**
+  (SUM, GROUP BY, filtro de data), não recuperação semântica. Recuperar transações
+  por similaridade daria somas **numericamente erradas**.
+- **Não é text-to-SQL.** O LLM **não escreve SQL e não calcula nada** — só decide
+  *qual ferramenta* chamar e *com quais parâmetros*. A aritmética é código Python
+  determinístico. Resultado: **zero superfície de SQL injection** e **alucinação
+  numérica praticamente eliminada** (o número vem da ferramenta, não do modelo).
+- **Mesma fonte de verdade do dashboard.** As ferramentas agregam sobre
+  `listar_gastos_tratados()` — as respostas do agente **batem** com os gráficos.
+
+As 8 ferramentas (`total_periodo`, `gasto_por_categoria`, `gasto_por_cidade`,
+`top_estabelecimentos`, `comparar_meses`, `buscar_transacoes`, `media_mensal`,
+`compromissos_parcelados`) são **funções puras** em
+[`services/consultas_gastos.py`](backend/services/consultas_gastos.py) — 100%
+testáveis sem LLM e sem banco. Cada resposta devolve também as **fontes**
+(ferramentas chamadas + dados usados), exibidas no chat para o usuário conferir
+que o número é real.
+
+### Avaliação (golden set)
+
+O que diferencia *"fiz um agente"* de *"sei avaliar um agente"*. Um
+[golden set de 20 perguntas](backend/avaliacao/avaliador_agente.py) tem, para cada
+uma, a ferramenta esperada e o **valor numérico esperado** (ground truth calculado
+direto em pandas, **fora** do agente). Rodando contra o agente real:
+
+| Métrica | Resultado |
+|---|---|
+| **Acerto de roteamento** (ferramenta certa) | **100%** (20/20) |
+| **Acerto de parâmetros** | **100%** |
+| **Acerto numérico** (valor bate com o ground truth) | **100%** |
+| **Taxa de alucinação** (número que não veio de ferramenta) | **0%** |
+| **Custo médio / pergunta** | **R$ 0,015** |
+| **Latência média** | **~9,4 s** |
+
+A lógica de pontuação (parsing de valores, detecção de alucinação) é coberta por
+testes determinísticos. Reproduza com:
+
+```bash
+cd backend
+python -m avaliacao.avaliador_agente          # golden set contra o agente real (gasta tokens)
+python -m pytest testes/test_consultas_gastos.py testes/test_avaliador_agente.py
+```
+
+> Amostra pequena (20 perguntas curadas), reportada como ordem de grandeza — o
+> valor está em ter o pipeline **auditável e reprodutível**, não em garantia
+> estatística.
+
+---
+
 ## 🚀 Stack
 
 | Camada | Tecnologias |
@@ -30,6 +96,7 @@ A aplicação é dividida em **dois serviços independentes** que compartilham o
 | **Backend / API** | FastAPI, Uvicorn, SQLAlchemy (async), asyncpg, Pydantic |
 | **Frontend** | Streamlit, streamlit-echarts (Apache ECharts), httpx |
 | **Dados / ML** | pandas, RapidFuzz (fuzzy match IBGE), LangChain + OpenAI (extração) |
+| **Agente** | LangChain *tool calling* (`create_tool_calling_agent`) + OpenAI, agregação em pandas |
 | **Banco** | PostgreSQL na nuvem (Neon) |
 | **Mapas** | Módulo reutilizável da biblioteca [Baltazar](#-biblioteca-baltazar) (GeoJSON + IBGE) |
 
@@ -102,7 +169,7 @@ Crie um `.env` na **raiz** do projeto (gitignored):
 | Variável | Obrigatória | Descrição |
 |---|---|---|
 | `DATABASE_URL` | ✅ | String de conexão PostgreSQL (Neon) |
-| `OPENAI_API_KEY` | ingestão | Chave da OpenAI usada pelo LLM de extração |
+| `OPENAI_API_KEY` | ingestão + agente | Chave da OpenAI usada pelo LLM de extração e pelo Agente de Gastos |
 | `GOOGLE_API_KEY` | ingestão | Usada no tratamento de rate-limit durante a ingestão |
 | `BACKEND_URL` | — | Endereço da API p/ o frontend (default `http://localhost:8001`) |
 | `ALLOWED_ORIGINS` | — | Origens CORS da API (default `http://localhost:8501`) |
@@ -177,27 +244,35 @@ python -m avaliacao.avaliar_faturas \
 ```
 backend/
   app/
-    main_api.py        # app FastAPI (CORS, rotas, /health)
-    schemas_api.py     # GastoOut (response model)
-    routers/gastos.py  # GET /gastos
+    main_api.py            # app FastAPI (CORS, rotas, /health)
+    schemas_api.py         # GastoOut + PerguntaIn/RespostaOut (response models)
+    routers/gastos.py      # GET /gastos
+    routers/agente.py      # POST /agente/perguntar
   services/
-    gastos_service.py  # repo + pipeline de tratamento → registros JSON
+    gastos_service.py      # repo + pipeline de tratamento → registros JSON
+    consultas_gastos.py    # agregações PURAS do agente (pandas, sem LLM)
+    agente_service.py      # orquestra pergunta → agente → resposta + metadados
     ProcessadorFaturas.py
-  repository/          # acesso ao banco (SQLAlchemy async)
-  models/              # ORM (tabela faturas)
-  schemas/             # schemas Pydantic da ingestão
-  agents/              # wrapper do LLM (LangChain)
-  avaliacao/           # métricas de qualidade da extração (cobertura, reconciliação)
-  utils/               # df_tratamento, De_para (IBGE), leitura de faturas
-  main.py              # entrada da ingestão
-  config.py            # settings (pydantic-settings)
+  repository/              # acesso ao banco (SQLAlchemy async)
+  models/                 # ORM (tabela faturas)
+  schemas/                # schemas Pydantic da ingestão
+  agents/
+    modelo.py              # wrapper do LLM (LangChain ChatOpenAI)
+    ferramentas_gastos.py  # @tool: wrappers finos sobre consultas_gastos
+    agente_gastos.py       # monta o agente (tool calling) + system prompt
+  avaliacao/              # métricas: qualidade da extração + golden set do agente
+  utils/                  # df_tratamento, De_para (IBGE), leitura de faturas
+  main.py                 # entrada da ingestão
+  config.py               # settings (pydantic-settings)
 frontend/
-  app.py               # layout/orquestração Streamlit
-  config.py            # settings (BACKEND_URL, cache)
-  api/client.py        # cliente HTTP (httpx) → DataFrame
-  dados/               # view-model (pandas → estruturas ECharts)
-  componentes/         # componentes de gráfico (ECharts)
-  mapas.py             # ponte p/ mapas dinâmicos do Baltazar
+  app.py                  # layout/orquestração Streamlit
+  config.py               # settings (BACKEND_URL, cache)
+  api/client.py           # cliente HTTP (httpx) → DataFrame / agente
+  dados/                  # view-model (pandas → estruturas ECharts)
+  componentes/            # componentes de gráfico (ECharts)
+  chat/agente_chat.py     # componente de chat do agente (com fontes)
+  pages/                  # páginas Streamlit (2_Agente_de_Gastos.py)
+  mapas.py                # ponte p/ mapas dinâmicos do Baltazar
 data/                  # faturas (PDF) e backups
 ```
 

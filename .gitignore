@@ -11,3 +11,6 @@ myenv/
 *.PDF
 Faturas_santander/
 testes/fatura_*.csv
+
+# Resultado da avaliação do agente — contém respostas com valores reais
+backend/avaliacao/resultado_avaliacao.json

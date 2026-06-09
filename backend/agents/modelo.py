@@ -13,6 +13,29 @@ class ModelConfig(BaseModel):
     max_tokens: int = 4096
 
 
+# Premissas de preço do modelo (USD por 1M de tokens) e câmbio para BRL.
+# AJUSTE conforme o pricing real do modelo em uso (hoje gpt-5-mini).
+PRECO_INPUT_USD_1M = 0.25
+PRECO_OUTPUT_USD_1M = 2.00
+USD_BRL = 5.40
+
+
+def estimar_custo_brl(tokens: dict) -> float:
+    """Estima o custo em reais de uma chamada a partir do uso de tokens.
+
+    Args:
+        tokens: dict com ``input_tokens`` e ``output_tokens``.
+
+    Returns:
+        Custo estimado em BRL (4 casas), pelas premissas acima.
+    """
+    custo_usd = (
+        tokens.get("input_tokens", 0) / 1_000_000 * PRECO_INPUT_USD_1M
+        + tokens.get("output_tokens", 0) / 1_000_000 * PRECO_OUTPUT_USD_1M
+    )
+    return round(custo_usd * USD_BRL, 4)
+
+
 class llm:
     def __init__(self, model_config: ModelConfig = ModelConfig(), openai_api_key: str = None):
         self.model_config = model_config
