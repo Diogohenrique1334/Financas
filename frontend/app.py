@@ -19,6 +19,7 @@ from dados.preparo_graficos import (
     serie_semana_mes_complexo,
     serie_simples,
     top_10_categorias,
+    df_para_lista_percentual,
 )
 from mapas import (
     extrair_estados_com_gastos,
@@ -130,22 +131,24 @@ with st.container(border=True, height=550):
 
     with pcol1.container(border=True, height=520):
         st.subheader("Gastos por categoria", divider=True)
-        grafico_rosca(df_para_lista_dict(df_filtrado), tamanho="380px")
+        grafico_rosca(df_para_lista_percentual(df_filtrado), tamanho="380px")
 
     with pcol2.container(border=True, height=520):
         st.subheader("Ranking de gastos e utilizações", divider=True)
         barras_laterais_sum_qtd(df_para_lista(df_filtrado), tamanho="380px")
 
-    with st.container(border=True, height=520):
+    col1, col2 = st.columns([5, 5])
+
+    with col1.container(border=True, height=520):
         st.subheader("Gastos por dia da semana", divider=True)
         barras_empilhadas_laterais(
-            *serie_dia_semana_complexo(df_filtrado, "date", "amount", "categoria", "sum"), tamanho="300px"
+            *serie_dia_semana_complexo(df_filtrado, "date", "amount", "categoria", "sum"), tamanho="400px"
         )
 
-    with st.container(border=True, height=520):
+    with col2.container(border=True, height=520):
         st.subheader("Gastos por semana do mês", divider=True)
         barras_empilhadas_laterais(
-            *serie_semana_mes_complexo(df_filtrado, "date", "amount", "categoria", "sum"), tamanho="300px"
+            *serie_semana_mes_complexo(df_filtrado, "date", "amount", "categoria", "sum"), tamanho="400px"
         )
 
     with st.container(border=True, height=520):

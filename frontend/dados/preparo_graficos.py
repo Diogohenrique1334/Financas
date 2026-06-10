@@ -17,6 +17,16 @@ def df_para_lista_dict(df_filtrado, categoria="categoria", somatorio="amount", c
     )
     return [{"value": y, controle: x} for x, y in dados.values]
 
+def df_para_lista_percentual(df_filtrado, categoria="categoria", somatorio="amount", controle="name"):
+    """Agrega por `categoria` e devolve [{controle: nome, "percent": percentual}, ...]."""
+    dados = (
+        df_filtrado.groupby(categoria)[somatorio]
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+    total = dados[somatorio].sum()
+    return [{"value": round((y / total)*100, 2) , controle: x}for x, y in dados.values]
 
 def df_para_lista(df_filtrado, categoria="categoria", somatorio="amount"):
     """Devolve lista [score, amount, product] com cabeçalho, ordenada por valor."""

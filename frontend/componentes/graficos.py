@@ -162,8 +162,8 @@ def barras_empilhadas_laterais(raw_data=None, series_names=None, eixo=None, tama
     #                "fontWeight": "bold" # opcional: negrito
             }},
         "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
-        "xAxis": {"type": "value"},
-        "yAxis": {"type": "category", "data": eixo},
+        "yAxis": {"type": "value"},
+        "xAxis": {"type": "category", "data": eixo},
         "series": raw_data,
     }
     return st_echarts(options=options, height=tamanho)
