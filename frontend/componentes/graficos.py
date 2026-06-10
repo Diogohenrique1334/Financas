@@ -30,12 +30,17 @@ def barras_laterais_sum_qtd(data, tamanho="500px"):
     }
     return st_echarts(options=options, height=tamanho)
 
-
 def grafico_rosca(data, tamanho="500px"):
     """Gráfico de rosca (donut)."""
     options = {
         "tooltip": {"trigger": "item"},
-        "legend": {"top": "5%", "left": "center"},
+        "legend": {
+    #        "data": series_names,
+            "textStyle": {
+                "color": "#ffffff",  # cor da fonte da legenda
+                "fontSize": 11,      # opcional: tamanho da fonte
+    #                "fontWeight": "bold" # opcional: negrito
+            }},
         "series": [
             {
                 "name": "Access From",
@@ -52,7 +57,6 @@ def grafico_rosca(data, tamanho="500px"):
         ],
     }
     st_echarts(options=options, height=tamanho)
-
 
 def grafico_calendario(df, ano_2, ano_3):
     """Heatmap de calendário para dois anos (gastos por dia)."""
@@ -143,19 +147,26 @@ def grafico_calendario(df, ano_2, ano_3):
 
     return st_echarts(options=to_native(option))
 
-
 def barras_empilhadas_laterais(raw_data=None, series_names=None, eixo=None, tamanho="500px"):
     """Barras horizontais empilhadas (séries já no formato ECharts)."""
     options = {
-        "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
-        "legend": {"data": series_names},
+        "tooltip": {
+            "trigger": "axis", 
+            "axisPointer": {"type": "shadow"}
+            },
+        "legend": {
+            "data": series_names,
+            "textStyle": {
+                "color": "#ffffff",  # cor da fonte da legenda
+                "fontSize": 11,      # opcional: tamanho da fonte
+    #                "fontWeight": "bold" # opcional: negrito
+            }},
         "grid": {"left": "3%", "right": "4%", "bottom": "3%", "containLabel": True},
         "xAxis": {"type": "value"},
         "yAxis": {"type": "category", "data": eixo},
         "series": raw_data,
     }
     return st_echarts(options=options, height=tamanho)
-
 
 def barras_drilldown(drilldown_data, categorias, dados_principais, tamanho="500px"):
     """Barras com drilldown por clique (usa session_state p/ navegação)."""
@@ -213,7 +224,6 @@ def barras_drilldown(drilldown_data, categorias, dados_principais, tamanho="500p
         st.session_state.bar_drilldown_group = result
         st.rerun()
 
-
 def grafico_cachoeira(categorias, valores, aumento, queda, tamanho="500px"):
     """Gráfico cachoeira (waterfall) de gastos acumulados por mês."""
     options = {
@@ -267,12 +277,10 @@ def grafico_cachoeira(categorias, valores, aumento, queda, tamanho="500px"):
     }
     return st_echarts(options=options, height=tamanho)
 
-
 def mapa_palavras(data):
     """Nuvem de palavras (wordCloud)."""
     wordcloud_option = {"series": [{"type": "wordCloud", "data": data}]}
     return st_echarts(wordcloud_option)
-
 
 def barras_simples(categorias, valores, tamanho="300px"):
     """Barras verticais simples com linha de média."""

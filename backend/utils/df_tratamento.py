@@ -34,6 +34,8 @@ def pepi_gastos(df):
 
     df_filtrado = df_filtrado[~df_filtrado.descricao.isin([ x for x in df_filtrado.descricao.unique() if 'PAGTO' in x ])]
 
+    df_filtrado = df_filtrado[df_filtrado.amount > 0]
+
     df_filtrado['Cidade_sem_tratamento'] = df_filtrado.cidade
 
     df_filtrado.cidade = df_filtrado.cidade.map(cidades_trtadas)

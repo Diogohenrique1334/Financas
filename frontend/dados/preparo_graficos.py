@@ -1,7 +1,7 @@
 """Camada view-model: transforma o DataFrame de gastos nas estruturas
 (listas/dicionários) que os componentes ECharts consomem.
 
-Funções puras de pandas — sem dependência de Streamlit nem da API.
+Funções puras de pandas - sem dependência de Streamlit nem da API.
 """
 
 import pandas as pd
@@ -70,7 +70,7 @@ def serie_dia_semana_complexo(df, col_data, valores, colunas, agg):
                     "name": categorias[x],
                     "type": "bar",
                     "stack": "total",
-                    "label": {"show": True},
+                    "label": {"show": False},
                     "emphasis": {"focus": "series"},
                     "data": [int(l) for l in lista_valores[x]],
                 }
@@ -102,7 +102,7 @@ def serie_semana_mes_complexo(df, col_data, valores, colunas, agg):
                     "name": categorias[x],
                     "type": "bar",
                     "stack": "total",
-                    "label": {"show": True},
+                    "label": {"show": False},
                     "emphasis": {"focus": "series"},
                     "data": [int(l) for l in lista_valores[x]],
                 }

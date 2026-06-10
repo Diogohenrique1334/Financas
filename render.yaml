@@ -39,12 +39,12 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     envVars:
-      # Endereço interno do backend (host:port) injetado pelo Render.
+      # URL PÚBLICA do backend (com https). O endereço interno via
+      # `fromService: hostport` NÃO resolve entre web services no plano free
+      # (DNS "Name or service not known"). Cole no painel a URL pública do
+      # serviço backend: https://financas-backend-XXXX.onrender.com
       - key: BACKEND_URL
-        fromService:
-          type: web
-          name: financas-backend
-          property: hostport
+        sync: false
       # Mapas do Baltazar vendorizados na imagem (sem volume na nuvem).
       - key: BALTAZAR_MAPAS_PATH
         value: /app/vendor/mapas_dinamicos.py
